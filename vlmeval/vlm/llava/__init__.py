@@ -1,4 +1,5 @@
 from .llava import LLaVA, LLaVA_Next, LLaVA_Next2, LLaVA_OneVision, LLaVA_OneVision_HF
 from .llava_xtuner import LLaVA_XTuner
+from .viral import VIRAL
 
-__all__ = ['LLaVA', 'LLaVA_Next', 'LLaVA_XTuner', 'LLaVA_Next2', 'LLaVA_OneVision', 'LLaVA_OneVision_HF']
+__all__ = ['LLaVA', 'LLaVA_Next', 'LLaVA_XTuner', 'LLaVA_Next2', 'LLaVA_OneVision', 'LLaVA_OneVision_HF', 'VIRAL']

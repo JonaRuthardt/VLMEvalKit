@@ -40,14 +40,28 @@ class LLaVA(BaseModel):
             model_name = get_model_name_from_path(model_path)
 
         try:
-            self.tokenizer, self.model, self.image_processor, self.context_len = (
-                load_pretrained_model(
-                    model_path=model_path,
-                    model_base=None,
-                    model_name=model_name,
-                    device_map="cpu",
+            if "lora" in model_path:
+                model_base_map = {
+                    "llava-v1.5-7b-lora": "lmsys/vicuna-7b-v1.5",
+                }
+                print(model_path, model_base_map.get(model_path.split("/")[-1]), model_name)
+                self.tokenizer, self.model, self.image_processor, self.context_len = (
+                    load_pretrained_model(
+                        model_path=model_path,
+                        model_base=model_base_map.get(model_path.split("/")[-1]),
+                        model_name=model_name,
+                        device_map="cpu",
+                    )
                 )
-            )
+            else:
+                self.tokenizer, self.model, self.image_processor, self.context_len = (
+                    load_pretrained_model(
+                        model_path=model_path,
+                        model_base=None,
+                        model_name=model_name,
+                        device_map="cpu",
+                    )
+                )
         except Exception as err:
             if "ShareGPT4V" in model_path:
                 import llava
@@ -201,7 +215,7 @@ class LLaVA(BaseModel):
             image_tensor = None
 
         prompt = self.system_prompt + "USER: " + content + " ASSISTANT: "
-
+        
         input_ids = (
             tokenizer_image_token(
                 prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
