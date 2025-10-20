@@ -1,5 +1,6 @@
 import copy as cp
 import os
+import warnings
 from functools import partial
 
 import vlmeval.api as api
@@ -1021,6 +1022,22 @@ qwen_series = {
 thyme_series = {
     "Thyme-7B": partial(vlm.Thyme, model_path="Kwai-Keye/Thyme-RL")
 }
+
+viral_ckpts_path = os.environ.get("VIRAL_CHKPTS_PATH")
+viral_series = {}
+if viral_ckpts_path is None:
+    warnings.warn("VIRAL_CHKPTS_PATH is not set, VIRAL models will not be available.")
+elif not os.path.isdir(viral_ckpts_path):
+    warnings.warn(
+        f"VIRAL_CHKPTS_PATH is not a directory: {viral_ckpts_path}. "
+        "VIRAL models will not be available."
+    )
+else:
+    for viral_model_name in sorted(os.listdir(viral_ckpts_path)):
+        viral_series[viral_model_name] = partial(
+            vlm.VIRAL,
+            model_path=os.path.join(viral_ckpts_path, viral_model_name),
+        )
 
 llava_series = {
     "llava_v1.5_7b": partial(vlm.LLaVA, model_path="liuhaotian/llava-v1.5-7b"),
@@ -2624,7 +2641,7 @@ for group in interns1_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
