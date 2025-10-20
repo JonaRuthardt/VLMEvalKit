@@ -694,8 +694,19 @@ thyme_series = {
     "Thyme-7B": partial(Thyme, model_path="Kwai-Keye/Thyme-RL")
 }
 
+import os, sys, warnings
+viral_chkpts_path = os.environ.get('VIRAL_CHKPTS_PATH', None)
+if viral_chkpts_path is None:
+    warnings.warn("VIRAL_CHKPTS_PATH is not set, viral models will not be available.")
+viral_series = {}
+for viral_model_name in os.listdir(viral_chkpts_path):
+    viral_series[viral_model_name] = partial(
+        VIRAL, model_path=os.path.join(viral_chkpts_path, viral_model_name)
+        )
+
 llava_series = {
     "llava_v1.5_7b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-7b"),
+    "llava_v1.5_7b_lora": partial(LLaVA, model_path="liuhaotian/llava-v1.5-7b-lora"),
     "llava_v1.5_13b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-13b"),
     "llava_v1_7b": partial(LLaVA, model_path=LLAVA_V1_7B_MODEL_PTH),
     "sharegpt4v_7b": partial(LLaVA, model_path="Lin-Chen/ShareGPT4V-7B"),
@@ -1670,7 +1681,7 @@ for group in internvl_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 

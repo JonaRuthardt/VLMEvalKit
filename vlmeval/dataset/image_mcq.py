@@ -1037,6 +1037,9 @@ class MMERealWorld(ImageMCQDataset):
                 match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
                 cot = match_cot.group(1).strip() if match_cot else pred
 
+                import ast
+                print(data)
+                exit()
                 target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
                 iou = self.evaluate_box_iou(cot, target_instances)
 
