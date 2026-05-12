@@ -1,6 +1,7 @@
 import os
 import warnings
 import torch
+import json
 from PIL import Image
 
 from .llava import LLaVA
@@ -77,8 +78,10 @@ class VIRAL(LLaVA):
     def __init__(self,
                  model_path,
                  **kwargs):
-        assert model_path is not None and os.path.exists(model_path)
-        # super().__init__(model_path=model_path, **kwargs)
+        assert model_path is not None and os.path.exists(model_path) , \
+            "Please make sure the model_path is correct. "
+        assert os.path.exists(os.path.join(model_path, "config.json")), \
+            "Please make sure the model_path is correct and contains config.json file. "
         
         try: 
             from llava.model.builder import load_pretrained_model
@@ -92,11 +95,25 @@ class VIRAL(LLaVA):
             "The assistant gives helpful, detailed, and polite answers to the human's questions. "
         )
         self.stop_str = "</s>"
+
+        with open(os.path.join(model_path, "config.json"), 'r') as f:
+            config = json.load(f)
+        
+        model_base = config.get("model_type", None)
+        assert model_base is not None, "model_type must be specified in config.json."
+        if model_base == "llava_llama":
+            model_base = config.get("model_name_or_path", "lmsys/vicuna-7b-v1.5")
+            model_name = "llava-v1.5-7b-lora" if "7b" in model_base else "llava-v1.5-13b-lora"
+        elif model_base == "llava_qwen2":
+            model_base = config.get("model_name_or_path", "Qwen/Qwen2.5-7B-Instruct")
+            model_name = f"llava-v1.5-{model_base.split('/')[-1].lower()}-lora"
+        else:
+            raise NotImplementedError(f"Not implemented for base model {model_base}. ")
         
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path,
-            model_base="lmsys/vicuna-7b-v1.5" if "7b" in model_path else "lmsys/vicuna-13b-v1.5",
-            model_name="llava-v1.5-7b-lora" if "7b" in model_path else "llava-v1.5-13b-lora",
+            model_base=model_base,
+            model_name=model_name,
             device_map="cpu",
         )
         self.conv_mode = "llava_v1"
@@ -106,7 +123,7 @@ class VIRAL(LLaVA):
         kwargs_default = dict(
             do_sample=False,
             temperature=0,
-            max_new_tokens=2048,
+            max_new_tokens=32,
             top_p=None,
             num_beams=1,
             use_cache=True,
