@@ -90,6 +90,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
+        'MMStar_TR': 'https://huggingface.co/datasets/kesimeg/MMStar_tr/resolve/main/MMStar_TR.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
@@ -858,7 +859,7 @@ class MMERealWorld(ImageMCQDataset):
     TYPE = 'MMERealWorld'
 
     DATASET_MD5 = {
-        'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld': 'fd341132362fc41e707cb37ee6e4dcda',
         'MME-RealWorld-Lite': '4c17057d7d3b6c4a0d4397c3dae0881c',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
@@ -1034,16 +1035,13 @@ class MMERealWorld(ImageMCQDataset):
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
 
-                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
-                cot = match_cot.group(1).strip() if match_cot else pred
+                # match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                # cot = match_cot.group(1).strip() if match_cot else pred
 
-                import ast
-                print(data)
-                exit()
-                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
-                iou = self.evaluate_box_iou(cot, target_instances)
+                # target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                # iou = self.evaluate_box_iou(cot, target_instances)
 
-                data.loc[data['index'] == idx, 'iou'] = iou
+                # data.loc[data['index'] == idx, 'iou'] = iou
 
                 match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
                 pred = match_pred.group(1).strip().upper() if match_pred else pred
@@ -2574,10 +2572,23 @@ class TreeBench(ImageMCQDataset):
         else:
             tgt_path = self.dump_image(line)
 
-        prompt = line['question']
-        if not line["category"] == "Perception/OCR":
-            prompt += "\nOptions:\n" + line["multi-choice options"]
-        prompt += "\nAnswer with the option's letter directly."
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += "Answer with the correct option's letter directly. \n"
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -2591,14 +2602,57 @@ class TreeBench(ImageMCQDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.treebench import get_acc
-        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
-        try:
-            res = get_acc(eval_file)
-            dump(res, score_file)
-            return res
-        except:
-            return 0
+        import ast
+        from .utils.multiple_choice import extract_characters_regex
+        from .utils.treebench import get_dimension_rating
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        FAIL_MSG = 'Failed to obtain answer via API.'
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            cnt_rejected = 0
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                cot = match_cot.group(1).strip() if match_cot else pred
+
+                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                iou = self.evaluate_box_iou(cot, target_instances)
+
+                data.loc[data['index'] == idx, 'iou'] = iou
+
+                match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
+                pred = match_pred.group(1).strip().upper() if match_pred else pred
+
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
+                    cnt_rejected += 1
+                    data.loc[data['index'] == idx, 'score'] = 0
+                else:
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
 
     def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
         pattern = r"<box>(.*?)</box>"

@@ -36,6 +36,7 @@ from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
 from .qwen2_vl import Qwen2VLChat, Qwen2VLChatAguvis
+from .qwen3_vl import Qwen3VLChat
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import (
@@ -47,6 +48,7 @@ from .xcomposer import (
 )
 from .yi_vl import Yi_VL
 from .internvl import InternVLChat
+from .interns1 import InternS1Chat
 from .deepseek_vl import DeepSeekVL
 from .deepseek_vl2 import DeepSeekVL2
 from .janus import Janus
@@ -70,7 +72,7 @@ from .video_llm import (
     PLLaVA,
 )
 from .vila import VILA, NVILA
-from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, OvisU1
+from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, OvisU1, Ovis2_5
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
@@ -90,7 +92,7 @@ from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM, SmolVLM2
 from .sail_vl import SailVL
-from .valley import Valley2Chat
+from .valley import Valley2Chat, Valley3Chat
 from .ross import Ross
 from .ola import Ola
 from .x_vl import X_VL_HF
@@ -109,4 +111,8 @@ from .qtunevl import (
     QTuneVL,
     QTuneVLChat,
 )
+from .keye_vlm import KeyeChat
+from .qianfan_vl import Qianfan_VL
 from .logics import Logics_Thinking
+from .cosmos import Cosmos
+from .liquid import LFM2VL
