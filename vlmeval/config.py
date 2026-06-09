@@ -1039,6 +1039,18 @@ else:
             model_path=os.path.join(viral_ckpts_path, viral_model_name),
         )
 
+llava_swap_series = {}
+llava_swap_checkpoints = os.environ.get("LLAVA_SWAP_CHECKPOINTS")
+if llava_swap_checkpoints:
+    llava_swap_series[os.environ.get("LLAVA_SWAP_NAME", "llava_swap")] = partial(
+        vlm.LLaVASwap,
+        model_path=os.environ.get("LLAVA_SWAP_MODEL_PATH"),
+        checkpoint_paths=llava_swap_checkpoints,
+        config_path=os.environ.get("LLAVA_SWAP_CONFIG"),
+        config_overrides=os.environ.get("LLAVA_SWAP_CONFIG_OVERRIDES"),
+        ves_root=os.environ.get("VISION_ENCODER_SWAPPING_ROOT"),
+    )
+
 llava_series = {
     "llava_v1.5_7b": partial(vlm.LLaVA, model_path="liuhaotian/llava-v1.5-7b"),
     "llava_v1.5_13b": partial(vlm.LLaVA, model_path="liuhaotian/llava-v1.5-13b"),
@@ -2641,7 +2653,7 @@ for group in interns1_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, llava_series, granite_vision_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, llava_swap_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
