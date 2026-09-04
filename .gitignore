@@ -213,6 +213,8 @@ grok-*
 GLM4.5*
 SenseNova*
 
+.ignore_env
+debug.ipynb
 .DS_Store
 
 temp

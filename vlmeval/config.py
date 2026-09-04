@@ -1023,6 +1023,24 @@ thyme_series = {
     "Thyme-7B": partial(vlm.Thyme, model_path="Kwai-Keye/Thyme-RL")
 }
 
+steervit_ckpts_path = os.environ.get("STEERVIT_CHKPTS_PATH") or os.environ.get(
+    "STEERViT_CHKPTS_PATH"
+)
+steervit_series = {}
+if steervit_ckpts_path is None:
+    warnings.warn("STEERVIT_CHKPTS_PATH is not set, SteerViT models will not be available.")
+elif not os.path.isdir(steervit_ckpts_path):
+    warnings.warn(
+        f"STEERVIT_CHKPTS_PATH is not a directory: {steervit_ckpts_path}. "
+        "SteerViT models will not be available."
+    )
+else:
+    for steervit_model_name in sorted(os.listdir(steervit_ckpts_path)):
+        steervit_series[steervit_model_name] = partial(
+            vlm.SteerViT,
+            model_path=os.path.join(steervit_ckpts_path, steervit_model_name),
+        )
+
 viral_ckpts_path = os.environ.get("VIRAL_CHKPTS_PATH")
 viral_series = {}
 if viral_ckpts_path is None:
@@ -2653,7 +2671,7 @@ for group in interns1_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, llava_swap_series, llava_series, granite_vision_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, viral_series, steervit_series, llava_swap_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
